@@ -1,5 +1,7 @@
 # Flask-UFW
-Flask & Bootstrap UI for Uncomplicated Firewall (UFW)
+
+A simple UI for Uncomplicated Firewall (UFW) built with Flask & Bootstrap.
+
 ![screenshot](templates/preview.gif)
 
 
