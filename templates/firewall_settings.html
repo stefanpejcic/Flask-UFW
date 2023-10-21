@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>gUFW</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script> 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+
+
+    <div class="input-group mb-3">
+<input type="text" class="form-control" name="new_rule" id="searchInput" placeholder="Search by comment, port, IP..">
+        <button class="btn btn-primary mx-2" data-toggle="modal" data-target="#addRuleModal"><i class="bi bi-plus-lg"></i> Add Rule</button>
+    </div>
+    
+
+<!-- Add New Rule Form -->
+<div class="modal fade" id="addRuleModal" tabindex="-1" role="dialog" aria-labelledby="addRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add a new Firewall Rule</h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+        <form id="addRuleForm" method="POST" action="/settings/firewall/add-rule">
+            <div class="form-group">
+                <label for="action">Action:</label>
+                <select class="form-control" id="action" name="action" required>
+                    <option value="allow">Allow</option>
+                    <option value="deny">Deny</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="input_data">Port or IP:</label>
+                <input type="text" class="form-control" id="input_data" name="input_data" required>
+            </div>
+            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+
+           </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="addRuleButton">Add Rule</button>
+
+        </form> 
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+$(document).ready(function() {
+    // Handle the click event of the "Add Rule" button
+    $('#addRuleButton').click(function() {
+        // Capture the form data
+        var formData = $('#addRuleForm').serialize();
+
+        // Send an AJAX request to add the rule
+        $.ajax({
+            type: 'POST',
+            url: '/settings/firewall/add-rule',
+            data: formData,
+            success: function(data) {
+                // Handle success (e.g., display a success message)
+                // Close the modal or update the UI as needed
+                $('#addRuleModal').modal('hide');
+                // Reload the page to update the table
+                location.reload();
+            },
+            error: function(data) {
+                var errorMessage = "An error occurred: " + error;
+                // Display the error message to the user
+                $('#error-message').text(errorMessage);
+            }
+        });
+    });
+});
+</script>
+
+
+<!-- Bootstrap Tabs -->
+<ul class="nav nav-tabs" id="firewallTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="ipv4-tab" data-toggle="tab" href="#ipv4" role="tab" aria-controls="ipv4" aria-selected="true" style="color:var(--bs-heading-color)!important;">IPv4</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="ipv6-tab" data-toggle="tab" href="#ipv6" role="tab" aria-controls="ipv6" aria-selected="false" style="color:var(--bs-heading-color)!important;">IPv6</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="logs-tab" data-toggle="tab" href="#logs" role="tab" aria-controls="logs" aria-selected="false" style="color:var(--bs-heading-color)!important;">Logs</a>
+    </li>
+
+
+</ul>
+
+<div class="tab-content" id="firewallTabsContent">
+    <!-- IPv4 Tab Content -->
+    <div class="tab-pane fade show active" id="ipv4" role="tabpanel" aria-labelledby="ipv4-tab">
+    
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Number</th>
+            <th>Action</th>
+            <th>To Ports</th>
+            <th>To IP</th>
+            <th>Comment</th>
+            <th>From IP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rule in firewall_rules if rule.network_protocol == 'ipv4' %}
+        <tr data-rule-index="{{ rule.index }}" class="firewall-rule">
+            <td>{{ rule.index }}</td>
+            <td style="color: {% if rule.action == 'DENY' %}red{% else %}green{% endif %}">{{ rule.action }}</td>
+            <td>{{ rule.to_ports|replace('[', '')|replace(']', '') }}</td>
+                        <td style="font-weight: {% if rule.to_ip not in ['0.0.0.0', '::'] %}bold{% endif %}">{{ rule.to_ip }}</td>
+
+            <td>
+                {% if rule.comment is not none %}
+                    {{ rule.comment }}
+                {% endif %}
+            </td>
+            <td style="font-weight: {% if rule.from_ip not in ['0.0.0.0', '::'] %}bold{% endif %}">
+{{ rule.from_ip }}{% if rule.from_ip_prefix|string != '0' and rule.from_ip_prefix|string != '32' %}/{{ rule.from_ip_prefix }}{% endif %}
+
+
+            </td>
+                <td><a href="#" class="delete-rule-button" data-rule-index="{{ rule.index }}" data-rule-action="{{ rule.action }}" data-rule-to-ports="{{ rule.to_ports|replace('[', '')|replace(']', '') }}" data-rule-to-ip="{{ rule.to_ip }}" data-rule-comment="{{ rule.comment }}" data-rule-from-ip="{{ rule.from_ip }}">Delete</a></td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+    </div>
+
+
+    <!-- IPv6 Tab Content -->
+    <div class="tab-pane fade" id="ipv6" role="tabpanel" aria-labelledby="ipv6-tab">
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Number</th>
+            <th>Action</th>
+            <!--th>Action Direction</th-->
+            <th>To Ports</th>
+            <th>To IP</th>
+            <th>User</th>
+            <th>From IP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rule in firewall_rules if rule.network_protocol == 'ipv6' %}
+        <tr data-rule-index="{{ rule.index }}" class="firewall-rule">
+            <td>{{ rule.index }}</td>
+            <td style="color: {% if rule.action == 'DENY' %}red{% else %}green{% endif %}">{{ rule.action }}</td>
+            <!--td>{{ rule.action_direction }}</td-->
+            <td>{{ rule.to_ports|replace('[', '')|replace(']', '') }}</td>
+                       <td style="font-weight: {% if rule.to_ip not in ['0.0.0.0', '::'] %}bold{% endif %}">{{ rule.to_ip }}</td>
+            <td>
+                {% if rule.comment is not none %}
+                    {{ rule.comment }}
+                {% endif %}
+            </td>
+            <td style="font-weight: {% if rule.from_ip not in ['0.0.0.0', '::'] %}bold{% endif %}">
+{{ rule.from_ip }}{% if rule.from_ip_prefix|string != '0' %}/{{ rule.from_ip_prefix }}{% endif %}
+
+
+            </td>
+<td><a href="#" class="delete-rule-button" data-rule-index="{{ rule.index }}" data-rule-action="{{ rule.action }}" data-rule-to-ports="{{ rule.to_ports|replace('[', '')|replace(']', '') }}" data-rule-to-ip="{{ rule.to_ip }}" data-rule-comment="{{ rule.comment }}" data-rule-from-ip="{{ rule.from_ip }}">Delete</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+    </div>
+    <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+<pre id="log-output"></pre>
+
+<script>
+$(document).ready(function() {
+    // Function to filter table rows based on the search input
+    function filterTableRows() {
+        var input, filter, table, tr, td, i, j, txtValue;
+        input = document.getElementById("searchInput");
+        filter = input.value.toUpperCase();
+        table = document.querySelector(".tab-pane.active table"); // Select the active table
+        tr = table.getElementsByClassName("firewall-rule");
+
+        for (i = 0; i < tr.length; i++) {
+            var visible = false;
+            for (j = 0; j < tr[i].getElementsByTagName("td").length; j++) {
+                td = tr[i].getElementsByTagName("td")[j];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        visible = true;
+                        break; // If a match is found in any td, mark the row as visible and break the inner loop.
+                    }
+                }
+            }
+            tr[i].style.display = visible ? "" : "none";
+        }
+    }
+
+    // Attach the filterTableRows function to the "input" event on the search input
+    $("#searchInput").on("input", filterTableRows);
+
+
+
+
+
+
+
+    // Function to fetch and update the log content
+    function fetchUfwLog() {
+        $.get('/json/ufw-log', function(data) {
+            // Update the <pre> tag with the log content
+            $('#log-output').text(data.ufw_log.join('\n'));
+        });
+    }
+
+    // Attach a click event handler to the "Logs" link
+    $('#logs-tab').click(function(event) {
+        // Prevent the default link behavior (e.g., navigating to another page)
+        event.preventDefault();
+
+        // Fetch the UFW log when the link is clicked
+        fetchUfwLog();
+    });
+});
+
+</script>
+
+
+    </div>
+
+
+</div>
+
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmDeleteModalBody">
+                <!-- Rule information will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+// When the "Delete" button is clicked, show the confirmation modal
+$('.delete-rule-button').click(function () {
+    var ruleIndex = $(this).data('rule-index');
+    var ruleAction = $(this).data('rule-action');
+    var ruleToPorts = $(this).data('rule-to-ports');
+    var ruleToIp = $(this).data('rule-to-ip');
+    var ruleComment = $(this).data('rule-comment');
+    var ruleFromIp = $(this).data('rule-from-ip');
+
+    // Populate the modal content with the rule information
+    $('#confirmDeleteModalLabel').text('Confirm Deletion of UFW Rule ' + ruleIndex);
+    $('#confirmDeleteModalBody').html(
+        '<p><strong>Action:</strong> ' + ruleAction + '</p>' +
+        '<p><strong>To Ports:</strong> ' + ruleToPorts + '</p>' +
+        '<p><strong>To IP:</strong> ' + ruleToIp + '</p>' +
+        '<p><strong>User:</strong> ' + ruleComment + '</p>' +
+        '<p><strong>From IP:</strong> ' + ruleFromIp + '</p>'
+    );
+
+    $('#confirmDeleteButton').attr('data-rule-index', ruleIndex); // Store the rule index in the modal
+    $('#confirmDeleteModal').modal('show');
+});
+
+
+    // When the "Delete" button inside the modal is clicked, send the delete request
+    $('#confirmDeleteButton').click(function () {
+        var ruleIndex = $(this).data('rule-index');
+        $.ajax({
+            type: 'POST',
+            url: '/settings/firewall/delete-rule/' + ruleIndex,
+            success: function (data) {
+                // Handle success as needed
+                $('#confirmDeleteModal').modal('hide');
+
+                // Remove the deleted row from the table
+                $('tr[data-rule-index="' + ruleIndex + '"]').remove();
+            },
+            error: function (data) {
+                // Handle error if the deletion fails
+                $('#confirmDeleteModal').modal('hide');
+                // Add code to display an error message or handle the error gracefully
+            }
+        });
+    });
+
+
+</script>
+
+</body>
+</html>
+
