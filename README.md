@@ -20,12 +20,19 @@ A simple UI for Uncomplicated Firewall (UFW) built with Flask & Bootstrap.
 apt-get -qqinstall jc -y
 ```
 2. Install Flask and PIP if not already installed..
-
+```
+apt-get install python3-flask -y
+apt-get install python3-pip -y 
+```
 3. Git clone:
 ```
 git clone https://github.com/stefanpejcic/Flask-UFW.git
 ```
-4. Enter the folder and run the app:
+4. Enter the folder and install requirements
+```
+cd Flask-UFW && install requirements.txt
+```
+5. run the app:
 ```
 flask run
 ```
