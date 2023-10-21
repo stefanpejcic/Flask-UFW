@@ -10,6 +10,7 @@ A simple UI for Uncomplicated Firewall (UFW) built with Flask & Bootstrap.
 - View IPv4 rules
 - View IPv6 rules
 - Add, delete, search rules
+- View UFW status, restart/stop service
 - View UFD log file
 
 
