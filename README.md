@@ -1,3 +1,3 @@
-# gUFW
-GUI for Uncomplicated Firewall (UFW)
+# Flask-UFW
+Flask & Bootstrap UI for Uncomplicated Firewall (UFW)
 ![screenshot](templates/preview.gif)
