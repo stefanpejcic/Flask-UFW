@@ -145,7 +145,7 @@ def manage_service(action, service_name):
     except Exception as e:
         flash('Error executing command: {}'.format(str(e)), 'error')
 
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('firewall_settings'))
 
 
 import subprocess
